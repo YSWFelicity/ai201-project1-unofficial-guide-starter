@@ -98,14 +98,16 @@ def _is_tag_chip(line: str) -> bool:
     return line == line.upper() and any(c.isalpha() for c in line)
 
 
-def _parse_rmp_file(path: str, raw: str) -> list[Chunk]:
+def _extract_rmp_units(path: str, raw: str) -> list[Chunk]:
+    """Clean a RateMyProfessors page into one unit per review (boilerplate
+    removed, full comment text kept -- no size windowing here)."""
     professor = _professor_from_filename(path)
     source_file = os.path.basename(path)
     lines = [ln.strip() for ln in raw.splitlines()]
 
     # Indices of every "QUALITY" marker -> start of each review block.
     starts = [i for i, ln in enumerate(lines) if ln == "QUALITY"]
-    chunks: list[Chunk] = []
+    units: list[Chunk] = []
 
     for n, start in enumerate(starts):
         end = starts[n + 1] if n + 1 < len(starts) else len(lines)
@@ -155,9 +157,9 @@ def _parse_rmp_file(path: str, raw: str) -> list[Chunk]:
             "campus": "Newark",
             "author": professor,   # an RMP review is attributed to the prof's page
         }
-        chunks.extend(_emit(comment, meta))
+        units.append(Chunk(text=comment, metadata=meta))
 
-    return chunks
+    return units
 
 
 # ===========================================================================
@@ -199,12 +201,15 @@ def _is_comment_noise(line: str) -> bool:
     return False
 
 
-def _parse_reddit_file(path: str, raw: str) -> list[Chunk]:
+def _extract_reddit_units(path: str, raw: str) -> list[Chunk]:
+    """Clean an r/rutgers thread into one unit per comment (UI chrome, ads, and
+    flair removed, full comment text kept -- no size windowing here). The OP
+    post becomes the first unit when it hasn't been deleted."""
     source_file = os.path.basename(path)
     lines = [ln.strip() for ln in raw.splitlines()]
-    chunks: list[Chunk] = []
+    units: list[Chunk] = []
 
-    # --- OP post (title + question) as its own chunk, when not deleted -------
+    # --- OP post (title + question) as its own unit, when not deleted --------
     title = lines[0] if lines else ""
     op_body_lines: list[str] = []
     for ln in lines[1:]:
@@ -225,7 +230,7 @@ def _parse_reddit_file(path: str, raw: str) -> list[Chunk]:
             "author": "OP",
             "is_op": True,
         }
-        chunks.extend(_emit(op_text, meta))
+        units.append(Chunk(text=op_text, metadata=meta))
 
     # --- Comments: anchor on each timestamp line ---------------------------
     ts_indices = [i for i, ln in enumerate(lines) if _TIMESTAMP_RE.match(ln)]
@@ -272,9 +277,9 @@ def _parse_reddit_file(path: str, raw: str) -> list[Chunk]:
             "author": author,
             "is_op": is_op,
         }
-        chunks.extend(_emit(comment, meta))
+        units.append(Chunk(text=comment, metadata=meta))
 
-    return chunks
+    return units
 
 
 # ===========================================================================
@@ -304,14 +309,26 @@ def _emit(text: str, base_meta: dict) -> list[Chunk]:
     return windows
 
 
-def chunk_text(path: str, raw: str) -> list[Chunk]:
-    """Dispatch to the RMP or Reddit parser based on the document's source dir."""
+def extract_units(path: str, raw: str) -> list[Chunk]:
+    """CLEANING stage: dispatch to the RMP or Reddit extractor based on the
+    document's source dir and return cleaned, boilerplate-free units (one per
+    review/comment), with their full text intact. This is what clean.py uses."""
     source = os.path.basename(os.path.dirname(path))   # 'rmp' or 'reddit'
     if source == "rmp":
-        return _parse_rmp_file(path, raw)
+        return _extract_rmp_units(path, raw)
     if source == "reddit":
-        return _parse_reddit_file(path, raw)
+        return _extract_reddit_units(path, raw)
     raise ValueError(f"Unknown source directory for {path!r}: {source!r}")
+
+
+def chunk_text(path: str, raw: str) -> list[Chunk]:
+    """CHUNKING stage: clean into units (extract_units), then apply the size cap
+    + sliding-window fallback. One chunk per review/comment, windowing only the
+    rare over-long comment."""
+    chunks: list[Chunk] = []
+    for unit in extract_units(path, raw):
+        chunks.extend(_emit(unit.text, unit.metadata))
+    return chunks
 
 
 # ===========================================================================
