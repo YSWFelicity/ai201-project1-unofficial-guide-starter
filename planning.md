@@ -46,11 +46,13 @@ This guide collects student-written reviews of Rutgers CS professors and courses
      numbers fit the structure of your documents.
      A review-heavy corpus warrants different chunking than a long FAQ. -->
 
-**Chunk size:**
+**Chunk size:** One review / one Reddit comment per chunk (a *semantic* unit, not a fixed window). In practice this caps at ~600 characters (≈150 tokens); the rare comment longer than that (e.g. the advice-dense replies in `cs112_preparation_threads.txt`) falls back to a sliding window of 600 characters.
 
-**Overlap:**
+**Overlap:** Zero between distinct reviews — each review is an independent opinion, so there is nothing to bleed across the boundary. ~100 characters (~1 sentence) of overlap *only* on the fallback window split inside a single long comment, so a fact that straddles the cut (e.g. "exams are derived from review … she will help with other courses") survives in at least one chunk.
 
-**Reasoning:**
+**Reasoning:** This is a review-heavy corpus, not a long FAQ. In the RMP files the unit of meaning is one review — a short comment line (often 1–4 sentences) preceded by its `QUALITY`/`DIFFICULTY`/course/date metadata block; in the Reddit files it is one comment preceded by a username/`Upvote` block. A naive fixed-size character splitter (say 200 or 500 chars) would do real damage here: it would either sever a review's comment from its rating or merge two different professors'/students' opinions into one chunk, and the key signal would routinely land on a boundary. Splitting on the natural review/comment delimiter keeps each chunk as a self-contained opinion and lets me attach `professor`, `course`, `quality`, `difficulty`, and `campus` as metadata instead of embedding that boilerplate inline. Preprocessing strips RMP scaffolding (rating-distribution tables, "Similar Professors", "Helpful / Thumbs up") and Reddit UI noise (`Upvote`/`Downvote`/`Award`/`Share`, promoted ads, avatar/emoji lines) before chunking so embeddings reflect opinion text, not chrome.
+
+I'd know chunks are **too small** if a query like "is Chakrabarty's grading lenient?" pulled a chunk holding only the rating numbers without the sentence explaining them — the answer would be ungrounded. **Too large** if a single chunk spanned two professors and the model attributed one's complaint to the other.
 
 ---
 
@@ -62,11 +64,13 @@ This guide collects student-written reviews of Rutgers CS professors and courses
      would you weigh in choosing a different embedding model — context length, multilingual
      support, accuracy on domain-specific text, latency? -->
 
-**Embedding model:**
+**Embedding model:** `all-MiniLM-L6-v2` via `sentence-transformers` (the version pinned in `requirements.txt`). It produces 384-dimensional embeddings, runs locally with no API key or cost, is fast enough to embed the whole corpus in seconds, and its 256-token input limit comfortably covers a single review or comment. Stored and queried in ChromaDB with cosine similarity.
 
-**Top-k:**
+**Top-k:** **5.** Because each chunk is a single short review, one retrieved chunk is one student's anecdote — not enough to answer a "what do students say" question, which is inherently about *consensus*. Retrieving ~5 lets the model see several reviews and report the recurring theme (and any dissent). Too few (k=1–2) reduces the answer to a single voice and misses the outliers that make the corpus interesting (e.g. Chakrabarty's lone 2-star review). Too many (k=15+) starts pulling off-topic and cross-campus reviews into context, diluting the signal and inviting the model to blend unrelated professors. k=5 is a deliberate middle: enough to synthesize, few enough to stay on-target. For low-coverage professors like Edeki (only 2 reviews), k=5 surfaces both real reviews plus some unrelated chunks the grounding prompt can tell the model to ignore.
 
-**Production tradeoff reflection:**
+Semantic search works even when query and document share no exact words because the embedding model maps both into a shared vector space by *meaning* — so "is the grading easy?" lands near "grading is extremely lenient" and "you will 100% pass the class" despite zero shared keywords. A keyword index would miss those.
+
+**Production tradeoff reflection:** If cost weren't a constraint and this served real users, I'd weigh: **(1) accuracy on short, opinionated text** — MiniLM is a strong general model but a larger one (`bge-large-en-v1.5`) or a hosted model (`text-embedding-3-large`) would better separate sentiment-laden phrasing like "tough grader but you learn a lot" from genuinely negative reviews. **(2) Context length** — MiniLM truncates at 256 tokens, which is fine for reviews but would clip the long advice comments in the CS112 prep thread; a long-context model would embed those whole. **(3) Latency vs. local control** — MiniLM is instant and offline; an API model adds per-query latency and a network dependency but raises accuracy. **(4) Multilingual** — not relevant here, the corpus is entirely English, so I would *not* pay for multilingual capacity. Net: for a real deployment I'd likely move to `bge-large-en-v1.5` (still local, better domain separation) before reaching for a paid API, trading a little speed for retrieval quality.
 
 ---
 
@@ -79,11 +83,11 @@ This guide collects student-written reviews of Rutgers CS professors and courses
 
 | # | Question | Expected answer |
 |---|----------|-----------------|
-| 1 | | |
-| 2 | | |
-| 3 | | |
-| 4 | | |
-| 5 | | |
+| 1 | What programming language and editor does Professor Bruno Richard's CS220 Data Visualization course use, and does it have exams? | Taught in **R** using the **Atom** editor. It is **project/homework-heavy with no exams** — the only "exam" is the final project. (Source: `richard_bruno.txt`, both CS220 reviews.) |
+| 2 | Do students say CS111 and CS112 at Rutgers New Brunswick are coordinated across professors, and what does that mean for which professor to pick? | **Yes — both are coordinated/standardized.** Projects, exams, and recitations are the same across all sections, so the choice of professor only comes down to lecture style, and students can attend any professor's lecture. (Source: `cs111_goel_centeno_threads.txt` — XxBoatLickerxX, ScarletGingerrr, MaierCuber10.) |
+| 3 | What is the main complaint students have about Professor Charles Edeki's CS280 class? | **Lectures don't match the exams** — test questions are pulled from the textbook and nothing he lectures shows up on tests; chapters are skipped and questions appear out of order. He reads off slides and goes on long off-topic personal tangents; students call it effectively self-taught. Both reviews are 1-star. (Source: `edeki_charles.txt`.) |
+| 4 | In the Goel vs. Centeno comparison for CS111, how do students describe the difference in their lecturing styles? | **Goel** is described as more **structured and easy to follow**, good at worked examples; **Centeno** teaches at a **slower pace**, occasionally goes off topic, and is the **coordinator/leader of CS111 & CS112**. Both are repeatedly called kind and helpful; several students preferred Goel but said you "can't go wrong." (Source: `cs111_goel_centeno_threads.txt`.) |
+| 5 | What do students say about the difficulty and grading of Professor Mousumi Chakrabarty's intro CS courses (CS101/CS102)? | **Low difficulty, very lenient grading** — overall 4.8/5 quality, ~1.9 difficulty, most reviewers report **A or A+** and "you will 100% pass." Recurring theme: caring, clear, easy exams, "just go to the lectures." One **dissenting 2-star** review says she's hard to understand and her teaching is weak even though grading is lenient. (Source: `chakrabarty_mousumi.txt`.) |
 
 ---
 
@@ -109,6 +113,20 @@ This guide collects student-written reviews of Rutgers CS professors and courses
      You can use ASCII art, a Mermaid diagram, or embed a sketch as an image.
      You'll use this diagram as context when prompting AI tools to implement each stage. -->
 
+```mermaid
+flowchart LR
+    A["1 · Document Ingestion<br/>read documents/rmp/*.txt<br/>+ documents/reddit/*.txt<br/><i>Python file I/O</i><br/>strip RMP/Reddit boilerplate"]
+        --> B["2 · Chunking<br/>1 review / 1 comment per chunk<br/>(~600 char cap, 100 char overlap<br/>on fallback split)<br/><i>custom chunk_text()</i><br/>attach professor/course/campus metadata"]
+    B --> C["3 · Embedding + Vector Store<br/>encode chunks → 384-dim vectors<br/><i>all-MiniLM-L6-v2</i><br/>(sentence-transformers)<br/>persist in <i>ChromaDB</i> (cosine)"]
+    C --> D["4 · Retrieval<br/>embed query → similarity search<br/>top-k = 5<br/><i>ChromaDB query()</i>"]
+    D --> E["5 · Generation<br/>stuff retrieved chunks into a<br/>grounding prompt → answer<br/>w/ source attribution<br/><i>Groq (Llama) via groq SDK</i>"]
+
+    Q(["User question"]) --> D
+    E --> R(["Grounded answer<br/>+ cited sources"])
+```
+
+Stage labels → tools: **Ingestion** = Python file I/O + boilerplate cleaning · **Chunking** = custom `chunk_text()` (review-level split) · **Embedding** = `all-MiniLM-L6-v2` via `sentence-transformers` · **Vector store** = ChromaDB · **Retrieval** = ChromaDB similarity query (top-k=5) · **Generation** = Groq-hosted LLM via the `groq` SDK with a grounding system prompt.
+
 ---
 
 ## AI Tool Plan
@@ -123,8 +141,8 @@ This guide collects student-written reviews of Rutgers CS professors and courses
      "I'll give Claude my Chunking Strategy section and ask it to implement chunk_text()
      with my specified chunk size and overlap" is a plan. -->
 
-**Milestone 3 — Ingestion and chunking:**
+**Milestone 3 — Ingestion and chunking:** I'll give **Claude** my *Chunking Strategy* section plus two sample files (`chakrabarty_mousumi.txt` and `cs111_goel_centeno_threads.txt`) and ask it to write `load_documents()` and `chunk_text()`. **Input:** the chunk-size/overlap rules, the list of RMP boilerplate (`Similar Professors`, rating tables, `Helpful / Thumbs up`) and Reddit noise (`Upvote`/`Downvote`/`Award`/promoted ads/avatar lines) to strip, and the metadata fields to attach (`professor`, `course`, `quality`, `difficulty`, `campus`, `source_file`). **Expect:** a regex/delimiter-based splitter that emits one chunk per review/comment with a metadata dict, plus the sliding-window fallback for long comments. **Verify:** print the chunk count and spot-check that no chunk merges two professors and that each RMP chunk keeps its comment together with its rating — exactly the failure modes my Chunking Strategy section names.
 
-**Milestone 4 — Embedding and retrieval:**
+**Milestone 4 — Embedding and retrieval:** I'll give **Claude** my *Retrieval Approach* section and the Architecture diagram and ask it to wire up embedding + ChromaDB. **Input:** model name (`all-MiniLM-L6-v2`), that I want a persistent ChromaDB collection with cosine similarity, the metadata schema from M3, and top-k=5. **Expect:** code that embeds all chunks once, upserts them with IDs + metadata, and a `retrieve(query, k=5)` function returning chunks with their metadata and distances. **Verify:** run my 5 evaluation questions and confirm Q1 pulls Richard/CS220 chunks and Q3 pulls Edeki chunks — i.e. retrieval is on-target and not leaking cross-campus reviews.
 
-**Milestone 5 — Generation and interface:**
+**Milestone 5 — Generation and interface:** I'll give **Claude** my *Retrieval Approach* output plus the README's *Grounded Generation* requirement and ask it to write the prompt-assembly + Groq call. **Input:** retrieved chunks (with `professor`/`source_file` metadata), and the grounding rule — answer *only* from the provided chunks, say "the reviews don't cover that" when they don't, and cite which professor/source each claim comes from. **Expect:** a system prompt enforcing grounding, context formatted with source tags, a `groq` chat completion call, and a small CLI (or Gradio) loop reading `GROQ_API_KEY` from `.env`. **Verify:** ask an out-of-corpus question (e.g. a professor not in the docs) and confirm it declines rather than hallucinating, and that in-corpus answers cite the right source file.
