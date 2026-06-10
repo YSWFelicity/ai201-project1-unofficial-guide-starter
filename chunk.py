@@ -38,9 +38,16 @@ def chunk_clean_documents(clean_path: str = CLEAN_PATH) -> list[dict]:
 
     chunks: list[dict] = []
     cid = 0
+    # Per-document running position, so each chunk records WHERE it sits in its
+    # source document (needed later for source attribution). Keyed by
+    # source_file because one cleaned doc == one source file.
+    pos_in_doc: dict[str, int] = {}
     for doc in clean_docs:
         for unit in doc["units"]:
             for piece in _emit(unit["text"], unit["metadata"]):
+                src = piece.metadata["source_file"]
+                piece.metadata["chunk_index"] = pos_in_doc.get(src, 0)
+                pos_in_doc[src] = pos_in_doc.get(src, 0) + 1
                 chunks.append({
                     "id": f"chunk-{cid:03d}",
                     "text": piece.text,
