@@ -1,18 +1,8 @@
 # The Unofficial Guide — Project 1
 
-> **How to use this template:**
-> Complete each section *after* you've built and tested the corresponding part of your system.
-> Do not write placeholder text — if a section isn't done yet, leave it blank and come back.
-> Every section below is required for submission. One-liners will not receive full credit.
-
 ---
 
 ## Domain
-
-<!-- What topic or category of knowledge does your system cover?
-     Why is this knowledge valuable, and why is it hard to find through official channels?
-     Example: "Student reviews of CS professors at [university] — useful because official
-     course descriptions don't reflect teaching style, exam difficulty, or workload." -->
 
 **Rutgers University computer science course & professor reviews** (multi-campus — primarily New Brunswick, with some Newark).
 
@@ -21,10 +11,6 @@ The system makes searchable what students actually say about Rutgers CS professo
 ---
 
 ## Document Sources
-
-<!-- List every source you collected documents from.
-     Be specific: include URLs, subreddit names, forum thread titles, or file names.
-     Aim for variety — sources that together cover different subtopics or perspectives. -->
 
 | # | Source | Type | URL or file path |
 |---|--------|------|-----------------|
@@ -43,13 +29,6 @@ The system makes searchable what students actually say about Rutgers CS professo
 
 ## Chunking Strategy
 
-<!-- Describe your chunking approach with enough specificity that someone else could reproduce it.
-     Include:
-     - Chunk size (characters or tokens) and why that size fits your documents
-     - Overlap size and why (or why not) you used overlap
-     - Any preprocessing you did before chunking (e.g., stripping HTML, removing headers)
-     - What your final chunk count was across all documents -->
-
 **Chunk size:** One review (RateMyProfessors) or one comment (r/rutgers) per chunk — a *semantic* unit rather than a fixed character window. In practice this caps at ~600 characters (≈150 tokens); a comment longer than that (only the advice-dense replies in the CS112 prep thread hit this) falls back to a sliding window of 600 characters.
 
 **Overlap:** Zero between distinct reviews — each review is an independent opinion, so nothing should bleed across the boundary. ~100 characters (~1 sentence) of overlap is applied *only* on the fallback window split inside a single over-long comment, so a fact straddling the cut survives in at least one chunk. (3 of the 90 chunks are such fallback windows.)
@@ -64,12 +43,6 @@ The system makes searchable what students actually say about Rutgers CS professo
 
 ## Embedding Model
 
-<!-- Name the embedding model you used and explain your choice.
-     Then answer: if you were deploying this system for real users and cost wasn't a constraint,
-     what tradeoffs would you weigh in choosing a different model?
-     Consider: context length limits, multilingual support, accuracy on domain-specific text,
-     latency, and local vs. API-hosted. -->
-
 **Model used:** `all-MiniLM-L6-v2` via `sentence-transformers`, producing 384-dimensional embeddings, stored and queried in **ChromaDB with cosine similarity**, top-k = 5. It runs locally with no API key or cost, embeds the whole corpus in seconds, and its 256-token input limit comfortably covers a single review or comment. **One revision during implementation:** the first build embedded each chunk's bare text, which broke name-anchored queries — RMP review comments contain no professor or course name (those live only in metadata), so "Bruno Richard's CS220" had nothing to match and returned zero Richard chunks. The fix is **metadata-prefixed embedding**: each chunk is encoded as `"<professor> — <course> (<campus>): <review text>"` (RMP) or `"<thread_title> (<campus>): <comment text>"` (Reddit), so professor/course/campus land in the vector space. The **raw** review text is still stored separately in Chroma's `documents` for display and grounding — only the encoded string carries the prefix (see `embed_text()` in [`embed.py`](embed.py)). After this change all five evaluation questions retrieve their expected source.
 
 **Why top-k = 5:** each chunk is one student's anecdote, but a "what do students say" question is about *consensus*. k=1–2 collapses the answer to a single voice and misses outliers (e.g. Chakrabarty's lone dissenting review); k=15+ pulls off-topic and cross-campus reviews into context and invites the model to blend unrelated professors. k=5 is the deliberate middle — enough to synthesize, few enough to stay on-target.
@@ -79,13 +52,6 @@ The system makes searchable what students actually say about Rutgers CS professo
 ---
 
 ## Grounded Generation
-
-<!-- Explain how your system enforces grounding — how does it prevent the LLM from answering
-     beyond the retrieved documents?
-     Describe both your system prompt (what instruction you gave the model) and any structural
-     choices (e.g., how you formatted the context, whether you filtered low-relevance chunks).
-     Do not just say "I told it to use the documents" — show the actual instruction or explain
-     the mechanism. -->
 
 **System prompt grounding instruction:**
 
@@ -112,10 +78,6 @@ Because the Sources panel is built from retrieval rather than parsed from the mo
 
 ## Evaluation Report
 
-<!-- Run your 5 test questions from planning.md through your system and record the results.
-     Be honest — a partially accurate or inaccurate result that you explain well is more
-     valuable than a suspiciously perfect result. -->
-
 | # | Question | Expected answer | System response (summarized) | Retrieval quality | Response accuracy |
 |---|----------|-----------------|------------------------------|-------------------|-------------------|
 | 1 | Language/editor in Bruno Richard's CS220, and exams? | R + Atom; project/homework-heavy, no exams except the final project. | "Uses R and the Atom editor [2]; no traditional exams except a final project [2]; lectures are vital, don't miss more than one [1]." Top source: `richard_bruno.txt`. | Relevant | Accurate |
@@ -133,17 +95,6 @@ Because the Sources panel is built from retrieval rather than parsed from the mo
 
 ## Failure Case Analysis
 
-<!-- Identify at least one question where retrieval or generation did not work as expected.
-     Write a specific explanation of *why* it failed, tied to a part of the pipeline.
-
-     "The answer was wrong" is not an explanation.
-
-     "The relevant information was split across a chunk boundary, so retrieval returned
-     only half the context — the model didn't have enough to answer correctly" is an explanation.
-
-     "The embedding model treated the professor's nickname as out-of-vocabulary and returned
-     results from an unrelated review" is an explanation. -->
-
 **Question that failed:** "What is the main complaint students have about Professor Charles Edeki's CS280 class?" (evaluation Q3).
 
 **What the system returned:** A grounded, correctly-cited, but **incomplete** answer — that Edeki only reads off slides, goes off topic, and tells long personal stories, making the class "essentially self-taught" [1]. It missed the other half of the expected answer: that **exams don't track the lectures** — test questions are pulled from the textbook, chapters are skipped, and material from one chapter shows up on a different chapter's test ("Chp 8 stuff will be on a chp 12 test... he'll skip chap 4-9"). The answer was right about what it covered; it just didn't cover everything.
@@ -156,9 +107,6 @@ Because the Sources panel is built from retrieval rather than parsed from the mo
 
 ## Spec Reflection
 
-<!-- Reflect on how planning.md shaped your implementation.
-     Answer both questions with at least 2–3 sentences each. -->
-
 **One way the spec helped you during implementation:** The Chunking Strategy section named both failure modes in advance — "too small" (a chunk holding only rating numbers without the explaining sentence) and "too large" (one chunk spanning two professors). Having those written down turned implementation into verification: when I built `ingest.py` I wasn't guessing whether the splitter was right, I was checking it against two concrete bad outcomes the spec had already defined. The spot-check report (no chunk merges two professors; each RMP chunk keeps its comment with its rating) maps one-to-one onto those predictions, so the spec gave me my acceptance test for free.
 
 **One way your implementation diverged from the spec, and why:** The original Retrieval Approach embedded each chunk's **bare text**. During Milestone 4 testing this failed badly on name-anchored queries — RMP comments contain no professor or course name (those live only in metadata), so "Bruno Richard's CS220" matched nothing and returned zero Richard chunks. I diverged to **metadata-prefixed embedding**: the encoded string now carries `"<professor> — <course> (<campus>): <text>"` while the raw text is still stored for grounding. I updated planning.md to record this rather than letting the doc drift. The divergence was driven by the evaluation questions themselves — the spec's own Q1 (Richard/CS220) was the test that exposed the gap, which is exactly the feedback loop the planning doc was meant to create.
@@ -166,15 +114,6 @@ Because the Sources panel is built from retrieval rather than parsed from the mo
 ---
 
 ## AI Usage
-
-<!-- Describe at least 2 specific instances where you used an AI tool during this project.
-     For each: what did you give the AI as input, what did it produce, and what did you
-     change, override, or direct differently?
-
-     "I used Claude to help me code" is not sufficient.
-     "I gave Claude my Chunking Strategy section from planning.md and asked it to implement
-     chunk_text(). It returned a function using a fixed character split. I overrode the
-     chunk size from 500 to 200 because my documents are short reviews, not long guides." -->
 
 **Instance 1 — Generation + interface (Milestone 5)**
 
