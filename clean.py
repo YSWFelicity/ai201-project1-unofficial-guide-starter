@@ -38,6 +38,26 @@ from ingest import extract_units   # the boilerplate-removal extractors
 RAW_PATH = "raw_documents.jsonl"
 OUTPUT_PATH = "clean_documents.jsonl"
 
+# Conversational filler that is a "complete comment" but carries no domain
+# signal (e.g. "All good", "no, sorry", "Thank you very much!"). Dropping these
+# avoids dead-weight embeddings. Kept deliberately narrow so thin-but-real
+# opinions ("Centeno is good", "I love this guy, such a good professor.")
+# survive -- a length threshold can't separate those, so we match content.
+_PLEASANTRY = re.compile(
+    r"^(all good|no,?\s*sorry|np|yw|you'?re welcome|got it|okay?)[\s.!,]*$",
+    re.IGNORECASE,
+)
+
+
+def _is_substantive(text: str) -> bool:
+    """False for pure acknowledgments/pleasantries (no opinion, no fact)."""
+    t = text.strip()
+    if t.lower().startswith("thank"):     # "Thank you...", "Thanks!"
+        return False
+    if _PLEASANTRY.match(t):              # "All good", "no, sorry", "np", ...
+        return False
+    return True
+
 # Patterns that should NOT survive cleaning -- used purely to audit the output.
 _NOISE_AUDIT = {
     "HTML tag": re.compile(r"<[^>]+>"),
@@ -64,6 +84,8 @@ def clean_documents(raw_path: str = RAW_PATH) -> list[dict]:
         readable_blocks = []
         for u in units:
             m = u.metadata
+            if not _is_substantive(u.text):
+                continue   # drop conversational filler -> no dead-weight chunk
             unit_records.append({"text": u.text, "metadata": m})
             if m["source_type"] == "ratemyprofessors":
                 header = f"[{m['professor']} · {m['course']} · " \
