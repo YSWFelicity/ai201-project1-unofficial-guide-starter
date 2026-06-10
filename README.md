@@ -14,6 +14,10 @@
      Example: "Student reviews of CS professors at [university] — useful because official
      course descriptions don't reflect teaching style, exam difficulty, or workload." -->
 
+**Rutgers University computer science course & professor reviews** (multi-campus — primarily New Brunswick, with some Newark).
+
+The system makes searchable what students actually say about Rutgers CS professors and courses, gathered from RateMyProfessors and r/rutgers. This is valuable and hard to find officially because the registrar and course catalog describe what a class covers but never how it is taught — whether exams follow the lectures, whether sections are coordinated so the instructor hardly matters, how strictly a professor grades, or who makes a notoriously hard course survivable. That knowledge lives in hundreds of short, anonymous, contradictory reviews that a retrieval system can consolidate into one grounded answer.
+
 ---
 
 ## Document Sources
@@ -24,16 +28,16 @@
 
 | # | Source | Type | URL or file path |
 |---|--------|------|-----------------|
-| 1 | | | |
-| 2 | | | |
-| 3 | | | |
-| 4 | | | |
-| 5 | | | |
-| 6 | | | |
-| 7 | | | |
-| 8 | | | |
-| 9 | | | |
-| 10 | | | |
+| 1 | Mousumi Chakrabarty (CS, Newark) | RateMyProfessors page | [/professor/2526357](https://www.ratemyprofessors.com/professor/2526357) · `documents/rmp/chakrabarty_mousumi.txt` |
+| 2 | Charles Edeki (CS, Newark) | RateMyProfessors page | `documents/rmp/edeki_charles.txt` (search "Charles Edeki Rutgers") |
+| 3 | Joseph Elliot (CS, Newark) | RateMyProfessors page | [/professor/2528771](https://www.ratemyprofessors.com/professor/2528771) · `documents/rmp/elliot_joseph.txt` |
+| 4 | Jerry Illanovsky (CS, Newark) | RateMyProfessors page | `documents/rmp/illanovsky_jerry.txt` (search "Jerry Illanovsky Rutgers") |
+| 5 | Bruno Richard (CS, Newark) | RateMyProfessors page | [/professor/2584799](https://www.ratemyprofessors.com/professor/2584799) · `documents/rmp/richard_bruno.txt` |
+| 6 | Nicole Richardson (CS, Newark) | RateMyProfessors page | `documents/rmp/richardson_nicole.txt` (search "Nicole Richardson Rutgers") |
+| 7 | "Intro to CS: Goel or Centeno" (New Brunswick) | r/rutgers thread | [reddit.com/r/rutgers/.../1lmx2yk](https://www.reddit.com/r/rutgers/comments/1lmx2yk/intro_to_cs_goel_or_centeno/) · `documents/reddit/cs111_goel_centeno_threads.txt` |
+| 8 | "Professor Mark Russo for CS112?" (New Brunswick) | r/rutgers thread | [reddit.com/r/rutgers/.../1h18b2n](https://www.reddit.com/r/rutgers/comments/1h18b2n/how_is_professor_mark_russo_for_data_structures/) · `documents/reddit/cs112_mark_russo_threads.txt` |
+| 9 | "Preparation for Data Structures (CS112)" (New Brunswick) | r/rutgers thread | [reddit.com/r/rutgers/.../1i0ko6o](https://www.reddit.com/r/rutgers/comments/1i0ko6o/preparation_for_data_structures_cs_112_and/) · `documents/reddit/cs112_preparation_threads.txt` |
+| 10 | "Does it matter what CS112 professor I take" (New Brunswick) | r/rutgers thread | [reddit.com/r/rutgers/.../1q70faz](https://www.reddit.com/r/rutgers/comments/1q70faz/does_it_matter_what_cs112_professor_i_take_in_the/) · `documents/reddit/cs112_professor_threads.txt` |
 
 ---
 

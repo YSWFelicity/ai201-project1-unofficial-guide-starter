@@ -11,6 +11,12 @@
 
 <!-- What domain did you choose? Why is this knowledge valuable and hard to find through official channels? -->
 
+**Rutgers University computer science course & professor reviews** (multi-campus — primarily New Brunswick, with some Newark).
+
+This guide collects student-written reviews of Rutgers CS professors and courses from RateMyProfessors professor pages and r/rutgers discussion threads. This knowledge is hard to find through official channels because the course catalog and registrar tell you what a class *covers* but never how a professor actually *teaches* it — whether exams track the lectures, whether sections are coordinated so the instructor barely matters, how a grader handles partial credit, or which professor makes a notoriously hard course manageable. That signal is scattered across hundreds of short, anonymous, and sometimes contradictory reviews, which is exactly what a retrieval system can consolidate into a direct answer.
+
+> Note on scope: the corpus spans more than one Rutgers campus. The Reddit threads are New Brunswick (CS111/CS112 with Goel & Centeno, `ds.cs.rutgers.edu`); several RateMyProfessors professors teach Newark course numbers (CS101/102, OS332, etc.). Each source is campus-tagged in the table below so retrieval and evaluation stay honest.
+
 ---
 
 ## Documents
@@ -20,16 +26,16 @@
 
 | # | Source | Description | URL or location |
 |---|--------|-------------|-----------------|
-| 1 | | | |
-| 2 | | | |
-| 3 | | | |
-| 4 | | | |
-| 5 | | | |
-| 6 | | | |
-| 7 | | | |
-| 8 | | | |
-| 9 | | | |
-| 10 | | | |
+| 1 | RateMyProfessors — Mousumi Chakrabarty (CS, Newark) | 13 short reviews; highly rated (4.8); CS101/102/342, OS332, Mobile App Dev. Reviews emphasize clarity, caring, easy exams. | [ratemyprofessors.com/professor/2526357](https://www.ratemyprofessors.com/professor/2526357) · `documents/rmp/chakrabarty_mousumi.txt` |
+| 2 | RateMyProfessors — Charles Edeki (CS, Newark) | Only 2 reviews, both 1-star; CS280. Sharp negative outlier — useful for testing low-coverage retrieval. | ratemyprofessors.com (search "Charles Edeki Rutgers") · `documents/rmp/edeki_charles.txt` |
+| 3 | RateMyProfessors — Joseph Elliot (CS, Newark) | 11 polarized reviews (2.3 overall); CS102/251/335/347/348/490. Recurring complaint: reads off slides, weak delivery. | [ratemyprofessors.com/professor/2528771](https://www.ratemyprofessors.com/professor/2528771) · `documents/rmp/elliot_joseph.txt` |
+| 4 | RateMyProfessors — Jerry Illanovsky (CS, Newark) | 17 reviews, bimodal (lots of 5s and 1s); CS101/102/198/288/335, Intensive Programming. Strong disagreement across students. | ratemyprofessors.com (search "Jerry Illanovsky Rutgers") · `documents/rmp/illanovsky_jerry.txt` |
+| 5 | RateMyProfessors — Bruno Richard (CS, Newark) | 3 reviews; CS220 Data Visualization (project-heavy, R/atom, no exams). Niche elective coverage. | [ratemyprofessors.com/professor/2584799](https://www.ratemyprofessors.com/professor/2584799) · `documents/rmp/richard_bruno.txt` |
+| 6 | RateMyProfessors — Nicole Richardson (CS, Newark) | 14 reviews (3.3); "Everyday Data" / data-science courses. Divisive: "tough grader but you learn a lot." | ratemyprofessors.com (search "Nicole Richardson Rutgers") · `documents/rmp/richardson_nicole.txt` |
+| 7 | r/rutgers thread — "Intro to CS: Goel or Centeno" (New Brunswick) | Multi-comment thread comparing two CS111 lecturers; key fact: CS111 is coordinated across sections. | [reddit.com/r/rutgers/comments/1lmx2yk](https://www.reddit.com/r/rutgers/comments/1lmx2yk/intro_to_cs_goel_or_centeno/) · `documents/reddit/cs111_goel_centeno_threads.txt` |
+| 8 | r/rutgers thread — "How is Professor Mark Russo for Data Structures (CS112)?" (New Brunswick) | Short Q&A thread; sparse direct info on Russo, more about Goel/Centeno. Tests partial-answer handling. | [reddit.com/r/rutgers/comments/1h18b2n](https://www.reddit.com/r/rutgers/comments/1h18b2n/how_is_professor_mark_russo_for_data_structures/) · `documents/reddit/cs112_mark_russo_threads.txt` |
+| 9 | r/rutgers thread — "Preparation for Data Structures (CS112)" (New Brunswick) | Study-resource thread (course site, Big-O, prior exams, video links). Long, advice-dense comments. | [reddit.com/r/rutgers/comments/1i0ko6o](https://www.reddit.com/r/rutgers/comments/1i0ko6o/preparation_for_data_structures_cs_112_and/) · `documents/reddit/cs112_preparation_threads.txt` |
+| 10 | r/rutgers thread — "Does it matter what CS112 professor I take" (New Brunswick) | OP deleted; comments confirm exams/assignments are course-coordinated. Tests missing-context robustness. | [reddit.com/r/rutgers/comments/1q70faz](https://www.reddit.com/r/rutgers/comments/1q70faz/does_it_matter_what_cs112_professor_i_take_in_the/) · `documents/reddit/cs112_professor_threads.txt` |
 
 ---
 
@@ -87,9 +93,11 @@
      Consider: noisy or inconsistent documents, missing source attribution, off-topic
      retrieval, chunks that split key information across boundaries. -->
 
-1.
+1. **Cross-campus retrieval confusion.** The corpus mixes New Brunswick (Reddit: CS111/112, Goel/Centeno) and Newark (RMP: CS101/102, OS332). The two halves share almost no courses or professors, so a New-Brunswick question ("Goel or Centeno for CS111?") and a Newark professor question ("is Elliot good?") should pull from disjoint document sets. Risk: a query about "CS data structures professor" could surface a Newark review for an unrelated course, since the embedding model doesn't know the campus distinction. Mitigation to consider: store a `campus` metadata field per chunk and/or filter on it.
 
-2.
+2. **Noisy, boilerplate-heavy Reddit documents.** The Reddit files are full of non-content tokens — `Upvote`/`Downvote`/`Award`/`Share`, promoted ads (Windows, Shane Co.), avatar lines, emoji tags — and one thread's original question is deleted, leaving comments without their prompt. If chunked raw, embeddings get diluted by boilerplate and a chunk may lack the question it answers. Mitigation: strip Reddit UI boilerplate in preprocessing and chunk at the comment level so each chunk is a self-contained opinion.
+
+3. **Free-text comment is a thin slice of each RMP record.** In RMP files the actual opinion is one short comment line surrounded by metadata (QUALITY/DIFFICULTY/course/date/tags). Fixed-size character chunking would split mid-review or merge two professors' comments; the key signal could land at a chunk boundary. Mitigation: chunk one review per chunk and attach course/rating/professor as metadata rather than embedding it inline.
 
 ---
 

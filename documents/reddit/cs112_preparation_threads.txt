@@ -1,0 +1,130 @@
+Preparation for Data Structures (CS 112) and Statistics 1
+
+Hello, I hope you are all having a great Winter Break! I was wondering if you all could help give me resources to prepare for Data Structures and Statistics 1, especially Data Structures. Also, for CS 112, I have seen that people suggest going over arrays, recursion, Big O runtimes, and the searching and sorting patterns as well. Do you all have suggestions as to which videos/websites I should visit. Would Professor Ana Paula Centeno's videos for CS 111 suffice? Thank you very much!
+Archived post. New comments cannot be posted and votes cannot be cast.
+
+Upvote
+7
+
+Downvote
+ 
+6
+Go to comments
+
+
+Share
+ u/washingtonpost avatar
+washingtonpost
+•
+Promoted
+ 
+Read what’s trending from The Washington Post.
+We analyzed 47,000 ChatGPT conversations. Here’s what people really use it for.
+What do people ask the popular chatbot? We analyzed thousands of chats to identify common topics discussed by users and patterns in ChatGPT’s responses.
+Learn More
+ Thumbnail image: Read what’s trending from The Washington Post.
+Sort by:
+
+Best
+ 
+Search Comments
+Expand comment search
+Comments Section
+trynumber53
+•
+1y ago
+the data structures course page is public and has all the units listed in order along with lecture slides: https://ds.cs.rutgers.edu/
+
+
+Upvote
+4
+
+Downvote
+ 
+Award
+
+Share
+ 
+ u/Agent_0123456 avatar
+Agent_0123456
+OP
+•
+1y ago
+Thank you for helping out!
+
+Upvote
+3
+
+Downvote
+ 
+Award
+
+Share
+ 
+ u/Story_Salamander avatar
+Story_Salamander
+•
+1y ago
+emoji:KnightNew:CS major
+I dunno about statistics, but I took data structures with Centeno last semester so I could give you some tips.
+
+Big O efficiencies are definitely covered in data structures, and you will be taught and expected to memorize the runtimes for the different data structures. Reviewing centeno's videos will help with this as well as for sorting algorithms (sorting algorithms aren't covered until the end of the semester though).
+
+Someone previously commented on visiting the website for data structures which has all the lecture slides. I'll repost the link here in case it gets lost among all the comments: https://ds.cs.rutgers.edu/
+
+On the website there are exams from previous semesters as well as the answer keys. I dunno who you have for data structures this semester, but something centeno did for my class was draw out each data structure visually and it helped out a lot (her slides helped as well)!
+
+There are also a lot of useful videos online about data structures you could look up as well. I recommend Michael Sambol's videos: https://youtube.com/playlist?list=PL9xmBV_5YoZO2D89q42-y8voxIJKpB4oR&si=4NVCWWAnA5m_7j_h
+
+Neso Academy also has a few videos on data structures as well (I'm not sure if they will help cause I've only ever used their videos for discrete I).
+
+I hope all this helps! :)
+
+
+Upvote
+3
+
+Downvote
+ 
+Award
+
+Share
+ 
+ u/Agent_0123456 avatar
+Agent_0123456
+OP
+•
+1y ago
+Thank you very very much! It truly did help!
+
+Upvote
+2
+
+Downvote
+ 
+Award
+
+Share
+ 
+sad--machine
+•
+1y ago
+math '26
+Haven't taken it here, but I'm pretty sure Statistics 1 is roughly equivalent to AP Statistics, for which there is a Khan Academy course.
+
+
+Upvote
+1
+
+Downvote
+ 
+Award
+
+Share
+ 
+ u/Agent_0123456 avatar
+Agent_0123456
+OP
+•
+1y ago
+Thank you very much!
