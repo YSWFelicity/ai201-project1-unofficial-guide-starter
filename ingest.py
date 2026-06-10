@@ -81,6 +81,8 @@ _RMP_META_PREFIXES = (
     "Grade:",
     "Textbook:",
     "Reviewed:",
+    "Online Class:",   # same metadata-field shape; without this the "Online
+                       # Class: Yes" line leaks in as the comment's first line.
 )
 
 
@@ -120,6 +122,11 @@ def _extract_rmp_units(path: str, raw: str) -> list[Chunk]:
         difficulty = block[3] if len(block) > 3 else ""
         course = block[4] if len(block) > 4 else ""
         date = block[5] if len(block) > 5 else ""
+
+        # Some scraped course lines have a course-icon's alt text ("Computer
+        # Icon") glued onto the front of the code, e.g. "Computer IconCS288".
+        # Strip it so the course metadata is just the code ("CS288").
+        course = re.sub(r"^Computer Icon", "", course).strip()
 
         # The comment is the text after the metadata fields and before the
         # first tag chip / "Helpful". The block layout is:
