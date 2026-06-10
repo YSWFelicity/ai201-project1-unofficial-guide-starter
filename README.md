@@ -1,5 +1,7 @@
 # The Unofficial Guide — Project 1
 
+**🎥 Video walkthrough:** [Demo video (Google Drive)](https://drive.google.com/file/d/1o5dSzSEWgBtAt-a2xU3JKHwWYkPyX4-n/view?usp=sharing)
+
 ---
 
 ## Domain
