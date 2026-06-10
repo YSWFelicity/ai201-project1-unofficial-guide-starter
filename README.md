@@ -85,7 +85,24 @@ The system makes searchable what students actually say about Rutgers CS professo
 
 **System prompt grounding instruction:**
 
+Grounding is enforced by the system prompt in [`generate.py`](generate.py), which gives the model hard rules rather than soft suggestions. The model is told it answers questions about Rutgers CS courses/professors using **only** the numbered student-review excerpts in the `CONTEXT` section of the user message, with five non-negotiable rules:
+
+1. **Ground every answer in the context** — use only the provided excerpts; no outside knowledge or training-data assumptions about Rutgers, the professors, or the courses.
+2. **Decline when unsupported** — if the excerpts don't contain enough to answer, reply with *exactly*: "I don't have enough information on that." (and nothing else). No guessing, no padding a thin answer.
+3. **Ignore irrelevant excerpts** — the excerpts come from similarity search (top-k=5), not hand-picking, so some may be about a different professor/course/campus. The model must use only the ones that bear on the question and **never blend two professors' or students' statements** into one claim.
+4. **Cite every claim** — each statement must carry the excerpt number(s) it came from in brackets, e.g. `[1]` or `[2][4]`; a fact with no citation is not allowed.
+5. **Report consensus *and* dissent** — state the recurring view and explicitly flag notable disagreement (e.g. a lone negative review) rather than smoothing it over.
+
+The structural choices that back this up: retrieved chunks are passed as a **numbered** `CONTEXT` block (`build_context()`), the call runs at **temperature 0** for reproducible, fact-anchored answers, and the refusal string is a named constant (`REFUSAL`) so the rule and the code agree on the exact wording. Verification: an out-of-corpus question ("Professor Alan Turing's CS999") still retrieves 5 chunks by similarity, yet the model returns the exact refusal phrase instead of bending those chunks into an answer — grounding holds even when retrieval returns something.
+
 **How source attribution is surfaced in the response:**
+
+Attribution is surfaced **two ways**, with the second as a hard guarantee:
+
+1. *In the answer text* — rule 4 above makes the model cite the excerpt number(s) behind each claim inline (`[n]`).
+2. *Programmatically, after generation* — `build_sources()` constructs the source list directly from the **metadata of the chunks `retrieve()` returned**, not from the model's text, and `format_sources_md()` appends it below every answer. Each entry shows the document the claim could come from: `professor · course · RateMyProfessors (campus) · source_file` for RMP reviews, or `r/rutgers — "thread title" · comment by <author> · source_file` for Reddit comments, plus the similarity distance.
+
+Because the Sources panel is built from retrieval rather than parsed from the model's output, the document names are surfaced for **every** query and cannot be hallucinated or silently dropped even if the model forgets a `[n]`. The model's inline `[n]` markers only indicate *which* of the listed sources it actually used; `build_context()` and `build_sources()` number the chunks in the same order, so `[2]` in the answer maps to source `[2]` in the panel. Example (eval Q1): the answer "...uses R and the Atom editor [2]... no traditional exams except a final project [2]" pairs with an appended `[2] Bruno Richard · CS220 · RateMyProfessors (Newark) · richard_bruno.txt`.
 
 ---
 
